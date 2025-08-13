@@ -270,21 +270,30 @@
             for (let t = 0.25; t < 1; t += 0.25) {
                 const x1 = gx;
                 const y1 = gy + gyDir * radius * t;
-                // Perpendicular direction (horizontal for vertical line)
-                const tickLen = 32;
-                const tx1 = x1 - tickLen / 2;
-                const tx2 = x1 + tickLen / 2;
+                // Less bold, smaller, more transparent tick
+                ctx.save();
+                ctx.globalAlpha = 0.35;
                 ctx.beginPath();
-                ctx.moveTo(tx1, y1);
-                ctx.lineTo(tx2, y1);
-                ctx.strokeStyle = '#111';
-                ctx.lineWidth = 6;
+                ctx.moveTo(x1 - 12, y1);
+                ctx.lineTo(x1 + 12, y1);
+                ctx.strokeStyle = '#2ecc40';
+                ctx.lineWidth = 2;
                 ctx.stroke();
-                // Save label info to draw after all lines
-                const labelDist = 64;
-                const lx = x1;
-                const ly = y1 + gyDir * labelDist;
-                greenLabels.push({text: t.toFixed(2), x: lx, y: ly, color: '#2ecc40'});
+                ctx.restore();
+                // Label (smaller, much less bold, more transparent)
+                ctx.save();
+                ctx.globalAlpha = 0.28;
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(x1, y1 + gyDir * 18, 9, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.globalAlpha = 0.32;
+                ctx.fillStyle = '#2ecc40';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                ctx.fillText(t.toFixed(2), x1, y1 + gyDir * 18);
+                ctx.restore();
             }
             // Draw labels for radius and green line after all lines for visibility
             ctx.font = 'bold 36px Arial';
@@ -514,14 +523,24 @@
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
             for (let t = -1; t <= 1.001; t += 0.25) {
-                const x = center.x + t * radius;
+                let x = center.x + t * radius;
                 const y = center.y;
+                // Move 1 and -1 labels slightly inward
+                let labelOffset = 0;
+                let label = (Math.abs(t) < 0.001) ? '0' : (t > 0.99 ? '1' : (t < -0.99 ? '-1' : t.toFixed(2)));
+                if (label === '1') {
+                    x = center.x + 0.93 * radius;
+                } else if (label === '-1') {
+                    x = center.x - 0.93 * radius;
+                } else if (label === '0') {
+                    x = center.x + 0.03 * radius;
+                }
                 // Major tick
                 ctx.save();
                 ctx.globalAlpha = 0.35;
                 ctx.beginPath();
-                ctx.moveTo(x, y - 12);
-                ctx.lineTo(x, y + 12);
+                ctx.moveTo(center.x + t * radius, y - 12);
+                ctx.lineTo(center.x + t * radius, y + 12);
                 ctx.strokeStyle = '#d7263d';
                 ctx.lineWidth = 2;
                 ctx.stroke();
@@ -535,7 +554,6 @@
                 ctx.fill();
                 ctx.globalAlpha = 0.7;
                 ctx.fillStyle = '#d7263d';
-                let label = (Math.abs(t) < 0.001) ? '0' : (t > 0.99 ? '1' : (t < -0.99 ? '-1' : t.toFixed(2)));
                 ctx.fillText(label, x, y + 18);
                 ctx.restore();
                 // Minor ticks between major
