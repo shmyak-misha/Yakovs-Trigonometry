@@ -173,53 +173,66 @@
             ctx.globalAlpha = 1;
             ctx.fill();
 
-            // Draw tick marks on the radius (red line) from 0 to 1 every 0.25
-            // Draw wide transparent red ruler background for the radius
-            const rulerWidthRedLine = 32;
-            const rulerLengthRedLine = radius;
-            const angleRadRedLine = angleDeg * Math.PI / 180;
-            ctx.save();
-            ctx.globalAlpha = 0.18;
-            ctx.fillStyle = 'rgba(255,255,255,1)';
-            ctx.translate(center.x, center.y);
-            ctx.rotate(angleRadRedLine);
-            ctx.fillRect(0, -rulerWidthRedLine/2, rulerLengthRedLine, rulerWidthRedLine);
-            ctx.globalAlpha = 1;
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = '#f8bbbd';
-            ctx.strokeRect(0, -rulerWidthRedLine/2, rulerLengthRedLine, rulerWidthRedLine);
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-            ctx.restore();
-            // Draw wide transparent red ruler background for the radius
-            const rulerWidthRed = 32;
-            const rulerLengthRed = radius;
-            const angleRadRedRuler = angleDeg * Math.PI / 180;
-            ctx.save();
-            ctx.globalAlpha = 0.18;
-            ctx.fillStyle = 'rgba(255,255,255,1)';
-            ctx.translate(center.x, center.y);
-            ctx.rotate(angleRadRedRuler);
-            ctx.fillRect(0, -rulerWidthRed/2, rulerLengthRed, rulerWidthRed);
-            ctx.globalAlpha = 1;
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = '#f8bbbd';
-            ctx.strokeRect(0, -rulerWidthRed/2, rulerLengthRed, rulerWidthRed);
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-            ctx.restore();
 
-
-            // Draw semi-transparent white rectangle as ruler background for the radius
-            ctx.save();
-            ctx.globalAlpha = 0.13;
-            ctx.fillStyle = '#fff';
-            const rulerWidthR = 32;
-            const rulerLengthR = radius;
+            // Draw wide transparent red ruler background for the radius
+            const rulerWidth = 38;
+            const rulerLength = radius;
             const angleRadRuler = angleDeg * Math.PI / 180;
+            ctx.save();
+            ctx.globalAlpha = 0.22;
+            ctx.fillStyle = '#fff';
             ctx.translate(center.x, center.y);
             ctx.rotate(angleRadRuler);
-            ctx.fillRect(0, -rulerWidthR/2, rulerLengthR, rulerWidthR);
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.fillRect(0, -rulerWidth/2, rulerLength, rulerWidth);
             ctx.globalAlpha = 1;
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#d7263d';
+            ctx.strokeRect(0, -rulerWidth/2, rulerLength, rulerWidth);
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.restore();
+
+            // Draw more prominent tick marks and labels on the red ruler
+            ctx.save();
+            ctx.translate(center.x, center.y);
+            ctx.rotate(angleRadRuler);
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            for (let t = 0; t <= 1.001; t += 0.25) {
+                // Major tick every 0.25
+                ctx.beginPath();
+                ctx.moveTo(rulerLength * t, -rulerWidth/2);
+                ctx.lineTo(rulerLength * t, rulerWidth/2);
+                ctx.strokeStyle = '#d7263d';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+                // Minor tick every 0.05 (except at 0, 0.25, 0.5, 0.75, 1)
+                if (t < 1) {
+                    for (let s = 0.05; s < 0.25; s += 0.05) {
+                        let pos = t + s;
+                        if (pos >= 1) break;
+                        ctx.beginPath();
+                        ctx.moveTo(rulerLength * pos, -rulerWidth/4);
+                        ctx.lineTo(rulerLength * pos, rulerWidth/4);
+                        ctx.strokeStyle = '#d7263d';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+                }
+                // Labels (not at 0)
+                if (t > 0 && t < 1.001) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.9;
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(rulerLength * t, -rulerWidth/2 + 18, 15, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                    ctx.fillStyle = '#d7263d';
+                    ctx.fillText(t.toFixed(2), rulerLength * t, -rulerWidth/2 + 18);
+                    ctx.restore();
+                }
+            }
             ctx.restore();
 
 
@@ -495,6 +508,57 @@
             ctx.stroke();
 
 
+            // Draw ruler-like markings on the diameter (horizontal line)
+            ctx.save();
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            for (let t = -1; t <= 1.001; t += 0.25) {
+                const x = center.x + t * radius;
+                const y = center.y;
+                // Major tick
+                ctx.save();
+                ctx.globalAlpha = 0.35;
+                ctx.beginPath();
+                ctx.moveTo(x, y - 12);
+                ctx.lineTo(x, y + 12);
+                ctx.strokeStyle = '#d7263d';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.restore();
+                // Label
+                ctx.save();
+                ctx.globalAlpha = 0.5;
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(x, y + 18, 9, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.globalAlpha = 0.7;
+                ctx.fillStyle = '#d7263d';
+                let label = (Math.abs(t) < 0.001) ? '0' : (t > 0.99 ? '1' : (t < -0.99 ? '-1' : t.toFixed(2)));
+                ctx.fillText(label, x, y + 18);
+                ctx.restore();
+                // Minor ticks between major
+                if (t < 1) {
+                    for (let s = 0.05; s < 0.25; s += 0.05) {
+                        let pos = t + s;
+                        if (pos > 1) break;
+                        const mx = center.x + pos * radius;
+                        ctx.save();
+                        ctx.globalAlpha = 0.22;
+                        ctx.beginPath();
+                        ctx.moveTo(mx, y - 7);
+                        ctx.lineTo(mx, y + 7);
+                        ctx.strokeStyle = '#d7263d';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                }
+            }
+            ctx.restore();
+
+
             // ...existing code...
         }
 
@@ -534,6 +598,9 @@
                 isDragging = true;
             }
         });
+        canvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+        });
         canvas.addEventListener('touchstart', (e) => {
             const { center, radius } = getCenterAndRadius();
             const { x: mouseX, y: mouseY } = getPointerPosition(e);
@@ -548,7 +615,7 @@
 
         function handlePointerMove(e) {
             if (!isDragging) return;
-            e.preventDefault();
+            if (e.type.startsWith('touch')) e.preventDefault();
             const { center } = getCenterAndRadius();
             const { x: mouseX, y: mouseY } = getPointerPosition(e);
             const dx = mouseX - center.x;
