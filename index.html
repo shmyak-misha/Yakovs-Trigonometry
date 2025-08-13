@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Trigonometric Circle</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #e0e7ff 0%, #f0f4f8 100%);
+            font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+            margin: 0;
+        }
+        h1 {
+            margin-top: 32px;
+            font-size: 2.6em;
+            color: #1a237e;
+            letter-spacing: 1px;
+            font-weight: 700;
+            text-shadow: 0 2px 8px #b3b3b3;
+        }
+        .instructions {
+            color: #333;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px #cfd8dc;
+            padding: 18px 32px;
+            margin-bottom: 18px;
+            font-size: 1.15em;
+            max-width: 700px;
+            text-align: center;
+        }
+        #container {
+            position: relative;
+            width: 820px;
+            height: 615px;
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: -40px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 18px;
+            box-shadow: 0 4px 32px #b0bec5;
+            padding: 24px 24px 24px 24px;
+        }
+        canvas {
+            background: radial-gradient(circle at 60% 40%, #f8fafc 60%, #e3eafc 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 18px #90caf9;
+            border: 2px solid #1976d2;
+        }
+        #slider {
+            width: 600px;
+            margin-top: 18px;
+            accent-color: #1976d2;
+            height: 6px;
+            border-radius: 8px;
+            background: linear-gradient(90deg, #1976d2 0%, #64b5f6 100%);
+            box-shadow: 0 2px 8px #b3b3b3;
+        }
+        #slider::-webkit-slider-thumb {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid #1976d2;
+            box-shadow: 0 2px 8px #90caf9;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        #slider:focus {
+            outline: none;
+        }
+        #display {
+            margin-top: 0px;
+            font-size: 1.25em;
+            font-family: 'Fira Mono', 'Consolas', 'Menlo', monospace;
+            color: #fff;
+            background: linear-gradient(100deg, #1976d2 70%, #64b5f6 100%);
+            padding-left: 8px;
+            padding-right: 8px;
+            padding-top: 6px;
+            padding-bottom: 6px;
+            border-radius: 14px;
+            box-shadow: 0 2px 12px #90caf9;
+            min-width: 220px;
+            min-height: 60px;
+            max-width: 240px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            text-align: left;
+            border: 2px solid #fff;
+            margin-left: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Interactive Trigonometric Circle</h1>
+    <div class="instructions">
+        Drag the red radius or use the slider to explore the circle. <br>
+        The green line shows the vertical projection. Tick marks and labels show fractional lengths. <br>
+        The blue box displays the current angle, sine, and cosine values.
+    </div>
+    <div id="container">
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <canvas id="circleCanvas" width="600" height="600"></canvas>
+            <input type="range" id="slider" min="0" max="360" value="0">
+        </div>
+        <div id="display"></div>
+    </div>
+    <script>
+        const canvas = document.getElementById('circleCanvas');
+        const ctx = canvas.getContext('2d');
+        const slider = document.getElementById('slider');
+    const center = { x: 300, y: 300 };
+    const radius = 240; // 25% smaller
+        function updateDisplay(angleDeg) {
+            // Angle is measured according to the numbers on the circle (counterclockwise from the right)
+            // The angleDeg is the geometric angle from the positive X-axis (right), counterclockwise
+            // For display, use this directly
+                                    let displayAngle = Number(angleDeg).toFixed(2);
+                                    let rad = angleDeg * Math.PI / 180;
+                                    let sinVal = Math.sin(rad).toFixed(4);
+                                    let cosVal = Math.cos(rad).toFixed(4);
+                                    document.getElementById('display').innerHTML = `
+                                            <div style="display: flex; flex-direction: column; gap: 10px; color:#fff; font-size:1.1em;">
+                                                <div><b>Angle (°):</b> ${displayAngle}</div>
+                                                <div><b>sin:</b> ${sinVal}</div>
+                                                <div><b>cos:</b> ${cosVal}</div>
+                                            </div>
+                                    `;
+        }
+
+        function drawCircle(angleDeg) {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw white background circle 20% smaller than main circle
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, radius * 0.8, 0, 2 * Math.PI);
+            ctx.fillStyle = '#fff';
+            ctx.globalAlpha = 1;
+            ctx.fill();
+
+            // Draw tick marks on the radius (red line) from 0 to 1 every 0.25
+            // Draw wide transparent red ruler background for the radius
+            const rulerWidthRedLine = 32;
+            const rulerLengthRedLine = radius;
+            const angleRadRedLine = angleDeg * Math.PI / 180;
+            ctx.save();
+            ctx.globalAlpha = 0.18;
+            ctx.fillStyle = 'rgba(255,255,255,1)';
+            ctx.translate(center.x, center.y);
+            ctx.rotate(angleRadRedLine);
+            ctx.fillRect(0, -rulerWidthRedLine/2, rulerLengthRedLine, rulerWidthRedLine);
+            ctx.globalAlpha = 1;
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#f8bbbd';
+            ctx.strokeRect(0, -rulerWidthRedLine/2, rulerLengthRedLine, rulerWidthRedLine);
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.restore();
+            // Draw wide transparent red ruler background for the radius
+            const rulerWidthRed = 32;
+            const rulerLengthRed = radius;
+            const angleRadRedRuler = angleDeg * Math.PI / 180;
+            ctx.save();
+            ctx.globalAlpha = 0.18;
+            ctx.fillStyle = 'rgba(255,255,255,1)';
+            ctx.translate(center.x, center.y);
+            ctx.rotate(angleRadRedRuler);
+            ctx.fillRect(0, -rulerWidthRed/2, rulerLengthRed, rulerWidthRed);
+            ctx.globalAlpha = 1;
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#f8bbbd';
+            ctx.strokeRect(0, -rulerWidthRed/2, rulerLengthRed, rulerWidthRed);
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.restore();
+
+
+            // Draw semi-transparent white rectangle as ruler background for the radius
+            ctx.save();
+            ctx.globalAlpha = 0.13;
+            ctx.fillStyle = '#fff';
+            const rulerWidthR = 32;
+            const rulerLengthR = radius;
+            const angleRadRuler = angleDeg * Math.PI / 180;
+            ctx.translate(center.x, center.y);
+            ctx.rotate(angleRadRuler);
+            ctx.fillRect(0, -rulerWidthR/2, rulerLengthR, rulerWidthR);
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.globalAlpha = 1;
+            ctx.restore();
+
+
+
+            let radiusLabels = [];
+            for (let t = 0.25; t < 1; t += 0.25) {
+                const angleRad = angleDeg * Math.PI / 180;
+                const x1 = center.x + radius * t * Math.cos(angleRad);
+                const y1 = center.y + radius * t * Math.sin(angleRad);
+                // Perpendicular direction
+                const perpAngle = angleRad + Math.PI / 2;
+                const tickLen = 32;
+                const tx1 = x1 + (tickLen / 2) * Math.cos(perpAngle);
+                const ty1 = y1 + (tickLen / 2) * Math.sin(perpAngle);
+                const tx2 = x1 - (tickLen / 2) * Math.cos(perpAngle);
+                const ty2 = y1 - (tickLen / 2) * Math.sin(perpAngle);
+                ctx.beginPath();
+                ctx.moveTo(tx1, ty1);
+                ctx.lineTo(tx2, ty2);
+                ctx.strokeStyle = '#111';
+                ctx.lineWidth = 6;
+                ctx.stroke();
+                // Save label info to draw after all lines
+                const labelDist = 64;
+                const lx = x1 + labelDist * Math.cos(angleRad);
+                const ly = y1 + labelDist * Math.sin(angleRad);
+                radiusLabels.push({text: t.toFixed(2), x: lx, y: ly, color: '#d7263d'});
+            }
+
+            // Draw tick marks on the green line from 0 to 1 every 0.25
+            let greenLabels = [];
+            let gx = center.x + radius * Math.cos(angleDeg * Math.PI / 180);
+            let gy = center.y + radius * Math.sin(angleDeg * Math.PI / 180);
+            let gyDir = (angleDeg >= 0 && angleDeg < 180) ? -1 : 1;
+            for (let t = 0.25; t < 1; t += 0.25) {
+                const x1 = gx;
+                const y1 = gy + gyDir * radius * t;
+                // Perpendicular direction (horizontal for vertical line)
+                const tickLen = 32;
+                const tx1 = x1 - tickLen / 2;
+                const tx2 = x1 + tickLen / 2;
+                ctx.beginPath();
+                ctx.moveTo(tx1, y1);
+                ctx.lineTo(tx2, y1);
+                ctx.strokeStyle = '#111';
+                ctx.lineWidth = 6;
+                ctx.stroke();
+                // Save label info to draw after all lines
+                const labelDist = 64;
+                const lx = x1;
+                const ly = y1 + gyDir * labelDist;
+                greenLabels.push({text: t.toFixed(2), x: lx, y: ly, color: '#2ecc40'});
+            }
+            // Draw labels for radius and green line after all lines for visibility
+            ctx.font = 'bold 36px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            radiusLabels.forEach(lbl => {
+                // Draw white background for contrast
+                ctx.save();
+                ctx.fillStyle = '#fff';
+                ctx.globalAlpha = 0.85;
+                ctx.beginPath();
+                ctx.arc(lbl.x, lbl.y, 32, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = lbl.color;
+                ctx.fillText(lbl.text, lbl.x, lbl.y);
+                ctx.restore();
+            });
+            greenLabels.forEach(lbl => {
+                ctx.save();
+                ctx.fillStyle = '#fff';
+                ctx.globalAlpha = 0.85;
+                ctx.beginPath();
+                ctx.arc(lbl.x, lbl.y, 32, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = lbl.color;
+                ctx.fillText(lbl.text, lbl.x, lbl.y);
+                ctx.restore();
+            });
+            // Mark the radius from 0 to 1 every 0.25
+            for (let t = 0.25; t < 1; t += 0.25) {
+                const markX = center.x + radius * t * Math.cos(angleDeg * Math.PI / 180);
+                const markY = center.y + radius * t * Math.sin(angleDeg * Math.PI / 180);
+                ctx.beginPath();
+                ctx.arc(markX, markY, 7, 0, 2 * Math.PI);
+                ctx.fillStyle = '#d7263d';
+                ctx.globalAlpha = 0.7;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+
+            // Mark the green line from 0 to 1 every 0.25
+            let greenStartY, greenEndY;
+            if (angleDeg >= 0 && angleDeg < 180) {
+                greenStartY = -1;
+                greenEndY = -1 * radius;
+            } else {
+                greenStartY = 1;
+                greenEndY = radius;
+            }
+            for (let t = 0.25; t < 1; t += 0.25) {
+                let gx = center.x + radius * Math.cos(angleDeg * Math.PI / 180);
+                let gy = center.y + radius * Math.sin(angleDeg * Math.PI / 180) + t * greenEndY;
+                ctx.beginPath();
+                ctx.arc(gx, gy, 7, 0, 2 * Math.PI);
+                ctx.fillStyle = '#2ecc40';
+                ctx.globalAlpha = 0.7;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+            // Draw white background circle 20% smaller than main circle
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, radius * 0.8, 0, 2 * Math.PI);
+            ctx.fillStyle = '#fff';
+            ctx.globalAlpha = 1;
+            ctx.fill();
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw main circle
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, radius, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#0057b7';
+            ctx.lineWidth = 8;
+            ctx.stroke();
+
+            // Draw axes
+            ctx.beginPath();
+            ctx.moveTo(center.x, center.y - radius);
+            ctx.lineTo(center.x, center.y + radius);
+            ctx.moveTo(center.x - radius, center.y);
+            ctx.lineTo(center.x + radius, center.y);
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            // Draw degree scale (ticks and numbers)
+            ctx.save();
+            for (let deg = 0; deg < 360; deg += 5) {
+                // Counterclockwise: invert angle direction, offset 0 so 0 is top, 90 left, 180 bottom, 270 right
+                const rad = (-deg) * Math.PI / 180;
+                let tickLen, tickColor, tickWidth;
+                if (deg % 30 === 0) {
+                    tickLen = 28;
+                    tickColor = '#222';
+                    tickWidth = 4;
+                } else if (deg % 10 === 0) {
+                    tickLen = 18;
+                    tickColor = '#666';
+                    tickWidth = 2.5;
+                } else {
+                    tickLen = 10;
+                    tickColor = '#aaa';
+                    tickWidth = 1.5;
+                }
+                const tx1 = center.x + (radius - 8) * Math.cos(rad);
+                const ty1 = center.y + (radius - 8) * Math.sin(rad);
+                const tx2 = center.x + (radius - 8 - tickLen) * Math.cos(rad);
+                const ty2 = center.y + (radius - 8 - tickLen) * Math.sin(rad);
+                ctx.beginPath();
+                ctx.moveTo(tx1, ty1);
+                ctx.lineTo(tx2, ty2);
+                ctx.strokeStyle = tickColor;
+                ctx.lineWidth = tickWidth;
+                ctx.stroke();
+            }
+            ctx.font = 'bold 22px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            for (let deg = 0; deg < 360; deg += 10) {
+                // Counterclockwise: invert angle direction, offset 0 so 0 is top, 90 left, 180 bottom, 270 right
+                const rad = (-deg) * Math.PI / 180;
+                // Place numbers just outside the blue circle, shifted right by same offset as center.x
+                const sx = center.x + (radius + 24) * Math.cos(rad);
+                const sy = center.y + (radius + 24) * Math.sin(rad);
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = '#fff';
+                ctx.strokeText(deg.toString(), sx, sy);
+                ctx.fillStyle = '#000';
+                ctx.fillText(deg.toString(), sx, sy);
+            }
+            ctx.restore();
+
+            // Draw radius
+            const angleRad = angleDeg * Math.PI / 180;
+            const x = center.x + radius * Math.cos(angleRad);
+            const y = center.y + radius * Math.sin(angleRad);
+            ctx.beginPath();
+            ctx.moveTo(center.x, center.y);
+            ctx.lineTo(x, y);
+            ctx.strokeStyle = '#d7263d';
+            ctx.lineWidth = 5;
+            ctx.stroke();
+
+            // Draw green vertical line at end of radius
+            const hangLength = radius;
+            let y2;
+            if (angleDeg >= 0 && angleDeg < 180) {
+                y2 = y - hangLength;
+            } else {
+                y2 = y + hangLength;
+            }
+            // Hide ruler if angle is 0 or 180
+
+            if (Math.abs(angleDeg % 360) !== 0 && Math.abs(angleDeg % 360) !== 180) {
+                // Draw wide transparent ruler background for the green line
+                ctx.save();
+                ctx.globalAlpha = 0.18;
+                ctx.fillStyle = '#fff';
+                const rulerWidthG = 38;
+                const rulerHeightG = Math.abs(y2 - y);
+                ctx.fillRect(x - rulerWidthG/2, Math.min(y, y2), rulerWidthG, rulerHeightG);
+                ctx.globalAlpha = 1;
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#b2dfdb';
+                ctx.strokeRect(x - rulerWidthG/2, Math.min(y, y2), rulerWidthG, rulerHeightG);
+                ctx.restore();
+                // Draw green ruler line
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x, y2);
+                ctx.strokeStyle = '#2ecc40';
+                ctx.lineWidth = 7;
+                ctx.stroke();
+
+                // Add numbers from 0 to 1 with 0.25 step to the green ruler
+                ctx.save();
+                ctx.globalAlpha = 1;
+                ctx.font = 'bold 22px Arial';
+                ctx.fillStyle = '#2ecc40';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                for (let t = 0; t <= 1.001; t += 0.25) {
+                    let ty = (angleDeg >= 0 && angleDeg < 180) ? y - hangLength * t : y + hangLength * t;
+                    ctx.fillText(t.toFixed(2), x + rulerWidthG/2 + 8, ty);
+                }
+                ctx.restore();
+            }
+
+            // Draw quadrant labels
+            ctx.font = 'bold 36px Arial';
+            ctx.fillStyle = '#111';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('I', center.x + radius/2, center.y - radius/2);
+            ctx.fillText('II', center.x - radius/2, center.y - radius/2);
+            ctx.fillText('III', center.x - radius/2, center.y + radius/2);
+            ctx.fillText('IV', center.x + radius/2, center.y + radius/2);
+            // Draw circle
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, radius, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#0074D9';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            // Draw vertical line
+            ctx.beginPath();
+            ctx.moveTo(center.x, center.y - radius);
+            ctx.lineTo(center.x, center.y + radius);
+            ctx.strokeStyle = '#888';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Draw horizontal line
+            ctx.beginPath();
+            ctx.moveTo(center.x - radius, center.y);
+            ctx.lineTo(center.x + radius, center.y);
+            ctx.strokeStyle = '#888';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+
+            // ...existing code...
+        }
+
+        slider.addEventListener('input', (e) => {
+            // Angle on the circle: 0 at right, increases counterclockwise
+            const angle = Number(e.target.value);
+            drawCircle(angle);
+            updateDisplay(angle);
+        });
+
+        // Mouse interaction for dragging the radius
+        let isDragging = false;
+
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            // Check if mouse is near the radius endpoint
+            const angleRad = slider.value * Math.PI / 180;
+            const x = center.x + radius * Math.cos(angleRad);
+            const y = center.y + radius * Math.sin(angleRad);
+            const dist = Math.hypot(mouseX - x, mouseY - y);
+            if (dist < 20) {
+                isDragging = true;
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            // Calculate angle from center to mouse, 0 at right, increasing counterclockwise
+            const dx = mouseX - center.x;
+            const dy = mouseY - center.y;
+            let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            if (angle < 0) angle += 360;
+            slider.value = angle;
+            drawCircle(angle);
+            updateDisplay((360 - angle) % 360);
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+    // Initial draw
+    drawCircle(slider.value);
+    updateDisplay(slider.value);
+    </script>
+</body>
+</html>
